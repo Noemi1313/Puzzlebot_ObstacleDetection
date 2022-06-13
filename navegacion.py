@@ -1,5 +1,9 @@
 #!/usr/bin/env python
+# Reto Ros
 # Equipo 3
+# Programa de control PD para la navegación y de evasión de obstáculos
+# 13 de junio de 2022
+
 #Librerias que contienen funciones para el programa
 from cmath import pi
 from math import atan2, cos, sin, sqrt
@@ -12,7 +16,6 @@ from std_msgs.msg import Float32, String, Int32, Int32MultiArray
 
 #Creamos una clase para el puzzlebot
 class Puzzlebot:
-
     #Funcion para inicializar todas las variables de la clase
     def __init__(self):
         self.r = 0.05
@@ -23,6 +26,7 @@ class Puzzlebot:
         self.wl = 0
         self.wr = 0
         self.dt = 0.01
+	# Coordenadas de los Waypoints
         self.xt = [1, 2, 3, 4] 
         self.yt = [0, 0, 0, 0]
 	self.obstx = 0
@@ -37,8 +41,10 @@ class Puzzlebot:
         self.vw.angular.x=0
         self.vw.angular.y=0
         self.vw.angular.z=0
+	# Constantes Kp, Kd
         self.kv = 0.12
         self.kw = 0.1
+	# Color identificado
 	self.semafo = "X"
 
     #Funcion de callback cuando el topico /wr mande un mensaje    
@@ -98,13 +104,16 @@ class Puzzlebot:
         else:
             self.semafo="X"
 	
+    # Función principal	
     def move(self):
+	# Identificar si vio el objeto
 	entreR = False
 	entreV = False
-	posV = 0
-	posR = 0
 	accessR = False
 	accessV = False
+	# Posición antes de rodear
+	posV = 0
+	posR = 0
         base = rospy.get_time()
         now=rospy.get_time()
 	desp=sqrt(pow(self.xt[self.goal],2)+pow(self.yt[self.goal],2))
@@ -118,6 +127,7 @@ class Puzzlebot:
 	        self.error() #Los argumentos son la posicion deseada ej. (0.8,0) (esta en metros)
          	self.calculaVel()
 
+		# Si la cámara no detecta obstáculos
 		if self.semafo == "X" and self.et > 0.03 or self.et < -0.03:
 		    self.vw.linear.x=0
 	            print("Rotando")
@@ -125,6 +135,7 @@ class Puzzlebot:
 		    self.vw.linear.x=0
 		    self.vw.angular.z=0 
 		    print("Llegue") 
+		    # Si ya llegó a todos los waypoints
 		    if(self.goal == len(self.xt)-1):
 			print(self.goal+1)
 			print("Fin")
@@ -133,40 +144,48 @@ class Puzzlebot:
 			self.thetha = 0 
 			self.pubVel()
 			break
+		    # Ir al siguiente waypoint
 		    else:
 		        self.x = self.xt[self.goal]
 		        self.y = self.yt[self.goal]
 		        self.goal = self.goal +1
 		        print("GOAL: ", self.goal)   
 
+		# Si detecta el obstáculo rojo
 		if entreR == False and self.semafo == "Rojo":
-		    posR = self.x 
+		    posR = self.x # Obtener la posición
 		    accessR = True
 		    accessV = False
                     entreR = True 
+		# Esquivar obstáculo 
 		if self.semafo == "Rojo" or self.x < (posR + 0.10) and posR != 0:
                     self.vw.linear.x =0.1
-                    self.vw.angular.z =0.4
+                    self.vw.angular.z =0.4 # Giro izquierda
                     print("Vuelta rojo")
 
+		# Si detecta el obstáculo verde
 		if entreV == False and self.semafo == "Verde":
-		    posV = self.x 
+		    posV = self.x # Ultima posición
                     entreV = True 
 		    accessV = True
 		    accessR = False
+		# Esquivar obstáculo
 		if self.semafo == "Verde" or self.x < (posV + 0.10) and posV != 0:
                     self.vw.linear.x =0.1
-                    self.vw.angular.z =-0.3
+                    self.vw.angular.z =-0.3 # Giro derecha
 		    print("Vuelta verde")
 
+		# Imprimir el obstáculo que esta esquivando
 		print("AccessV", accessV)
 		print("AccessR", accessR)
+		
+		# Para regresar al eje y=0 una vez que deje de ver el color del obstaculo
 	        if self.y > 0.02 or self.y < -0.02 and self.semafo == "X" and (accessR == True or accessV == True):
 		    if(accessR == True):		    
-                    	self.vw.angular.z=-0.05
+                    	self.vw.angular.z=-0.05 # Giro contrario para acomodarse
                     	print("Regresando del rojo a la linea")	
 		    elif (accessV == True):
-	            	self.vw.angular.z=0.05
+	            	self.vw.angular.z=0.05 # Giro contrario para acomodarse
 	            	print("Regresando del verde a la linea")   
 		    else:
 			print("Mal regresado a la linea")        
