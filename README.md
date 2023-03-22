@@ -1,4 +1,4 @@
-# TPuzzlebot Obstacle detection and path planning
+# Puzzlebot Obstacle Detection and Path Planning
 
 Implementation of path planning and control on a puzzlebot robot to avoid obstacles. 
 Use of computer vision to detect the color on the obstacles and to know when and how to avoid them.
