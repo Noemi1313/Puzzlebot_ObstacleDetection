@@ -1,4 +1,4 @@
-# Tareas_ROS
+# TPuzzlebot Obstacle detection and path planning
 
 Implementation of path planning and control on a puzzlebot robot to avoid obstacles. 
 Use of computer vision to detect the color on the obstacles and to know when and how to avoid them.
